@@ -91,10 +91,10 @@ class "POST /pet/{petId}" {
 
 
 class "DELETE /pet/{petId}" {
-.. path ..
-{field} integer (int64) <b>petId</b>
 .. header ..
 {field} string api_key
+.. path ..
+{field} integer (int64) <b>petId</b>
 .. responses ..
 400: {field} <i>not specified</i> 
 404: {field} <i>not specified</i> 
@@ -102,9 +102,9 @@ class "DELETE /pet/{petId}" {
 
 
 
-"/pet/{petId}" ..> "POST /pet/{petId}"
 "/pet/{petId}" ..> "DELETE /pet/{petId}"
 "/pet/{petId}" ..> "GET /pet/{petId}"
+"/pet/{petId}" ..> "POST /pet/{petId}"
 
 
 
@@ -305,9 +305,9 @@ class "DELETE /user/{username}" {
 
 
 
-"/user/{username}" ..> "PUT /user/{username}"
 "/user/{username}" ..> "DELETE /user/{username}"
 "/user/{username}" ..> "GET /user/{username}"
+"/user/{username}" ..> "PUT /user/{username}"
 
 
 class Order {

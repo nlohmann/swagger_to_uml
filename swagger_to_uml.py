@@ -211,7 +211,7 @@ class Definition:
         result += '}\n\n'
 
         # add relationships
-        for relationship in self.relationships:
+        for relationship in sorted(self.relationships):
             result += '{name} ..> {relationship}\n'.format(name=self.name, relationship=relationship)
 
         return result
@@ -271,6 +271,9 @@ class Operation:
         self.tags = tags  # type: List[str]
         self.parameters = parameters  # type: List[Parameter]
 
+    def __lt__(self, other):
+        return self.type < other.type
+
     @staticmethod
     def from_dict(whole, path, type, d, path_parameters):
         return Operation(
@@ -286,10 +289,11 @@ class Operation:
     @property
     def uml(self):
         # collect used parameter locations
+        possible_types = ['header', 'path', 'query', 'body', 'formData']
         parameter_types = {x.location for x in self.parameters}
 
         parameter_strings = []
-        for parameter_type in parameter_types:
+        for parameter_type in [x for x in possible_types if x in parameter_types]:
             # add heading
             parameter_strings.append('.. {parameter_type} ..'.format(parameter_type=parameter_type))
             # add parameters
@@ -333,8 +337,8 @@ class Path:
         return 'class "{path}" {{\n}}\n\n{operation_str}\n{association_str}\n\n'.format(
             path=self.path,
             operation_str='\n'.join([op.uml for op in self.operations]),
-            association_str='\n'.join({'"{path}" ..> "{operation_name}"'.format(
-                path=self.path, operation_name=op.name) for op in self.operations})
+            association_str='\n'.join(['"{path}" ..> "{operation_name}"'.format(
+                path=self.path, operation_name=op.name) for op in sorted(self.operations)])
         )
 
 
@@ -369,4 +373,4 @@ class Swagger:
 if __name__ == '__main__':
     input_file_name = sys.argv[1]
     sw = Swagger.from_file(input_file_name)
-    print(sw.uml)
+    print(sw.uml, end='', flush=True)
