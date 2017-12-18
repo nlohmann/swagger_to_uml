@@ -262,10 +262,9 @@ class Response:
 
 
 class Operation:
-    def __init__(self, path, type, operation_id, summary, description, responses, tags, parameters):
+    def __init__(self, path, type, summary, description, responses, tags, parameters):
         self.path = path  # type: str
         self.type = type  # type: str
-        self.operation_id = operation_id  # type: str
         self.summary = summary  # type: Optional[str]
         self.description = description  # type: Optional[str]
         self.responses = responses  # type: List[Response]
@@ -277,7 +276,6 @@ class Operation:
         return Operation(
             path=path,
             type=type,
-            operation_id=d['operationId'],
             summary=d.get('summary'),
             description=d.get('description'),
             tags=d.get('tags'),
