@@ -226,7 +226,10 @@ class Parameter:
         self.property = property  # type: Property
 
     @staticmethod
-    def from_dict(d):
+    def from_dict(whole, d):
+        ref = d.get('$ref')
+        if ref != None:
+            d = whole['parameters'][resolve_ref(ref)]
         return Parameter(
             name=d['name'],
             location=d['in'],
@@ -243,7 +246,7 @@ class Response:
         self.property = property  # type: Property
 
     @staticmethod
-    def from_dict(status, d):
+    def from_dict(whole, status, d):
         return Response(
             status=status,
             description=d.get('description'),
@@ -270,16 +273,16 @@ class Operation:
         self.parameters = parameters  # type: List[Parameter]
 
     @staticmethod
-    def from_dict(path, type, d, path_parameters):
+    def from_dict(whole, path, type, d, path_parameters):
         return Operation(
             path=path,
             type=type,
             operation_id=d['operationId'],
             summary=d.get('summary'),
             description=d.get('description'),
-            tags=d['tags'],
-            responses=[Response.from_dict(status, response) for status, response in d['responses'].items()],
-            parameters=path_parameters + [Parameter.from_dict(param) for param in d.get('parameters', [])]
+            tags=d.get('tags'),
+            responses=[Response.from_dict(whole, status, response) for status, response in d['responses'].items()],
+            parameters=path_parameters + [Parameter.from_dict(whole, param) for param in d.get('parameters', [])]
         )
 
     @property
@@ -320,11 +323,11 @@ class Path:
         self.operations = operations  # type: List[Operation]
 
     @staticmethod
-    def from_dict(path_name, d):
-        parameters = [Parameter.from_dict(param) for param in d.get('parameters', [])]
+    def from_dict(whole, path_name, d):
+        parameters = [Parameter.from_dict(whole, param) for param in d.get('parameters', [])]
         return Path(
             path=path_name,
-            operations=[Operation.from_dict(path_name, t, op, parameters) for t, op in d.items() if t != 'parameters']
+            operations=[Operation.from_dict(whole, path_name, t, op, parameters) for t, op in d.items() if t != 'parameters']
         )
 
     @property
@@ -344,8 +347,8 @@ class Swagger:
 
     @staticmethod
     def from_dict(d):
-        definitions = [Definition.from_dict(name, definition) for name, definition in d['definitions'].items()]
-        paths = [Path.from_dict(path_name, path) for path_name, path in d['paths'].items()]
+        definitions = [Definition.from_dict(name, definition) for name, definition in d.get('definitions',{}).items()]
+        paths = [Path.from_dict(d, path_name, path) for path_name, path in d['paths'].items()]
         return Swagger(definitions=definitions, paths=paths)
 
     @staticmethod
