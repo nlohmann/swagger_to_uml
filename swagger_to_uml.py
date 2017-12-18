@@ -21,6 +21,7 @@
 import json
 import sys
 from typing import List, Optional, Any, Set
+import yaml
 
 
 def resolve_ref(ref):
@@ -352,8 +353,11 @@ class Swagger:
 
     @staticmethod
     def from_file(filename):
+        loader = json.load
+        if filename.endswith('.yml'):
+            loader = yaml.load
         with open(filename, 'r') as fd:
-            return Swagger.from_dict(json.load(fd))
+            return Swagger.from_dict(loader(fd))
 
     @property
     def uml(self):
