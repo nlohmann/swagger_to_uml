@@ -20,7 +20,6 @@
 
 import json
 import sys
-import os.path
 from typing import List, Optional, Any, Set
 
 
@@ -353,7 +352,8 @@ class Swagger:
 
     @staticmethod
     def from_file(filename):
-        return Swagger.from_dict(json.load(open(filename)))
+        with open(filename, 'r') as fd:
+            return Swagger.from_dict(json.load(fd))
 
     @property
     def uml(self):
@@ -367,12 +367,4 @@ class Swagger:
 if __name__ == '__main__':
     input_file_name = sys.argv[1]
     sw = Swagger.from_file(input_file_name)
-
-    output_filename = os.path.splitext(input_file_name)[0] + '.puml'
-
-    # fix filename collisions
-    if output_filename == input_file_name:
-        output_filename += '.puml'
-
-    with open(output_filename, 'w') as o:
-        o.write(sw.uml)
+    print(sw.uml)
