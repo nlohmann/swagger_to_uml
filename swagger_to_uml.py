@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # coding=utf-8
 
 # MIT License
@@ -19,8 +20,8 @@
 
 import json
 import sys
-import os.path
 from typing import List, Optional, Any, Set
+import yaml
 
 
 def resolve_ref(ref):
@@ -210,7 +211,7 @@ class Definition:
         result += '}\n\n'
 
         # add relationships
-        for relationship in self.relationships:
+        for relationship in sorted(self.relationships):
             result += '{name} ..> {relationship}\n'.format(name=self.name, relationship=relationship)
 
         return result
@@ -225,7 +226,10 @@ class Parameter:
         self.property = property  # type: Property
 
     @staticmethod
-    def from_dict(d):
+    def from_dict(whole, d):
+        ref = d.get('$ref')
+        if ref != None:
+            d = whole['parameters'][resolve_ref(ref)]
         return Parameter(
             name=d['name'],
             location=d['in'],
@@ -242,7 +246,7 @@ class Response:
         self.property = property  # type: Property
 
     @staticmethod
-    def from_dict(status, d):
+    def from_dict(whole, status, d):
         return Response(
             status=status,
             description=d.get('description'),
@@ -258,36 +262,38 @@ class Response:
 
 
 class Operation:
-    def __init__(self, path, type, operation_id, summary, description, responses, tags, parameters):
+    def __init__(self, path, type, summary, description, responses, tags, parameters):
         self.path = path  # type: str
         self.type = type  # type: str
-        self.operation_id = operation_id  # type: str
         self.summary = summary  # type: Optional[str]
         self.description = description  # type: Optional[str]
         self.responses = responses  # type: List[Response]
         self.tags = tags  # type: List[str]
         self.parameters = parameters  # type: List[Parameter]
 
+    def __lt__(self, other):
+        return self.type < other.type
+
     @staticmethod
-    def from_dict(path, type, d, path_parameters):
+    def from_dict(whole, path, type, d, path_parameters):
         return Operation(
             path=path,
             type=type,
-            operation_id=d['operationId'],
             summary=d.get('summary'),
             description=d.get('description'),
-            tags=d['tags'],
-            responses=[Response.from_dict(status, response) for status, response in d['responses'].items()],
-            parameters=path_parameters + [Parameter.from_dict(param) for param in d.get('parameters', [])]
+            tags=d.get('tags'),
+            responses=[Response.from_dict(whole, status, response) for status, response in d['responses'].items()],
+            parameters=path_parameters + [Parameter.from_dict(whole, param) for param in d.get('parameters', [])]
         )
 
     @property
     def uml(self):
         # collect used parameter locations
+        possible_types = ['header', 'path', 'query', 'body', 'formData']
         parameter_types = {x.location for x in self.parameters}
 
         parameter_strings = []
-        for parameter_type in parameter_types:
+        for parameter_type in [x for x in possible_types if x in parameter_types]:
             # add heading
             parameter_strings.append('.. {parameter_type} ..'.format(parameter_type=parameter_type))
             # add parameters
@@ -319,11 +325,11 @@ class Path:
         self.operations = operations  # type: List[Operation]
 
     @staticmethod
-    def from_dict(path_name, d):
-        parameters = [Parameter.from_dict(param) for param in d.get('parameters', [])]
+    def from_dict(whole, path_name, d):
+        parameters = [Parameter.from_dict(whole, param) for param in d.get('parameters', [])]
         return Path(
             path=path_name,
-            operations=[Operation.from_dict(path_name, t, op, parameters) for t, op in d.items() if t != 'parameters']
+            operations=[Operation.from_dict(whole, path_name, t, op, parameters) for t, op in d.items() if t != 'parameters']
         )
 
     @property
@@ -331,8 +337,8 @@ class Path:
         return 'class "{path}" {{\n}}\n\n{operation_str}\n{association_str}\n\n'.format(
             path=self.path,
             operation_str='\n'.join([op.uml for op in self.operations]),
-            association_str='\n'.join({'"{path}" ..> "{operation_name}"'.format(
-                path=self.path, operation_name=op.name) for op in self.operations})
+            association_str='\n'.join(['"{path}" ..> "{operation_name}"'.format(
+                path=self.path, operation_name=op.name) for op in sorted(self.operations)])
         )
 
 
@@ -343,13 +349,17 @@ class Swagger:
 
     @staticmethod
     def from_dict(d):
-        definitions = [Definition.from_dict(name, definition) for name, definition in d['definitions'].items()]
-        paths = [Path.from_dict(path_name, path) for path_name, path in d['paths'].items()]
+        definitions = [Definition.from_dict(name, definition) for name, definition in d.get('definitions',{}).items()]
+        paths = [Path.from_dict(d, path_name, path) for path_name, path in d['paths'].items()]
         return Swagger(definitions=definitions, paths=paths)
 
     @staticmethod
     def from_file(filename):
-        return Swagger.from_dict(json.load(open(filename)))
+        loader = json.load
+        if filename.endswith('.yml'):
+            loader = yaml.load
+        with open(filename, 'r') as fd:
+            return Swagger.from_dict(loader(fd))
 
     @property
     def uml(self):
@@ -363,12 +373,4 @@ class Swagger:
 if __name__ == '__main__':
     input_file_name = sys.argv[1]
     sw = Swagger.from_file(input_file_name)
-
-    output_filename = os.path.splitext(input_file_name)[0] + '.puml'
-
-    # fix filename collisions
-    if output_filename == input_file_name:
-        output_filename += '.puml'
-
-    with open(output_filename, 'w') as o:
-        o.write(sw.uml)
+    print(sw.uml, end='', flush=True)
