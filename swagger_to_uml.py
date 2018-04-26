@@ -334,7 +334,7 @@ class Path:
 
     @property
     def uml(self):
-        return 'class "{path}" {{\n}}\n\n{operation_str}\n{association_str}\n\n'.format(
+        return 'interface "{path}" {{\n}}\n\n{operation_str}\n{association_str}\n\n'.format(
             path=self.path,
             operation_str='\n'.join([op.uml for op in self.operations]),
             association_str='\n'.join(['"{path}" ..> "{operation_name}"'.format(
