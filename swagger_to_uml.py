@@ -195,6 +195,11 @@ class Definition:
                 required=property_name in d.get('required', [])
             ))
 
+        try:
+           type=d['type']
+        except Exception:
+            print(d, file=sys.stderr)
+
         return Definition(name=name,
                           type=d['type'],
                           properties=properties,
