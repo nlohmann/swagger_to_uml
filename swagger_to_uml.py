@@ -29,10 +29,11 @@ def resolve_ref(ref):
 
 
 class Property:
-    def __init__(self, name, type, required, example=None, description=None, default=None, enum=None, format=None,
-                 items=None, maximum=None, exclusive_maximum=False, minimum=None, exclusive_minimum=False,
-                 multiple_of=None, max_length=None, min_length=0, pattern=None, max_items=None, min_items=0,
-                 unique_items=False, ref_type=None):
+    def __init__(self, name, type, required, example=None, description=None, default=None, enum=None,
+                 x_extensible_enum=None, format=None, items=None, maximum=None, exclusive_maximum=False, minimum=None,
+                 exclusive_minimum=False, multiple_of=None, max_length=None, min_length=0, pattern=None, max_items=None,
+                 min_items=0, unique_items=False, ref_type=None):
+
         # type
         self.type = type  # type: str
         self.format = format  # type: Optional[str]
@@ -41,6 +42,7 @@ class Property:
         # constraints
         self.required = required  # type: bool
         self.enum = enum  # type: Optional[List[Any]]
+        self.x_extensible_enum = x_extensible_enum  # type: Optional[List[Any]]
 
         # documentation
         self.name = name  # type: str
@@ -111,6 +113,7 @@ class Property:
             description=d.get('description'),
             default=d.get('default'),
             enum=d.get('enum'),
+            x_extensible_enum=d.get('x-extensible-enum'),
             format=d.get('format'),
             items=items,
             maximum=d.get('maximum'),
@@ -164,6 +167,10 @@ class Property:
         # enum
         if self.enum is not None:
             result += ' {{{enum_str}}}'.format(enum_str=', '.join([json.dumps(x) for x in self.enum]))
+
+        # x_extensible_enum
+        if self.x_extensible_enum is not None:
+            result += ' {{{x_extensible_enum_str}}}'.format(x_extensible_enum_str=', '.join([json.dumps(x) for x in self.x_extensible_enum]))
 
         # min/max
         if self.minimum or self.maximum:
