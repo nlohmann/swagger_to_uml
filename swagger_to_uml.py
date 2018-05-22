@@ -195,6 +195,9 @@ class Definition:
                 required=property_name in d.get('required', [])
             ))
 
+        if not 'type' in d:
+            print('required key "type" not found in dictionary ' + json.dumps(d), file=sys.stderr)
+
         return Definition(name=name,
                           type=d['type'],
                           properties=properties,
