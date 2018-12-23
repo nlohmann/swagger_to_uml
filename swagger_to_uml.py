@@ -77,6 +77,8 @@ class Property:
             type_dict = d
         elif 'schema' in d:
             type_dict = d['schema']
+        elif 'allOf' in d and len(d['allOf']) > 0:
+            type_dict = d['allOf'][0]
         else:
             type_dict = {}
 
@@ -371,6 +373,8 @@ class Swagger:
             paths='\n\n'.join([d.uml for d in self.paths]),
             definitions='\n\n'.join([d.uml for d in self.definitions])
         )
+
+
 
 
 if __name__ == '__main__':
