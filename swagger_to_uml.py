@@ -77,6 +77,8 @@ class Property:
             type_dict = d
         elif 'schema' in d:
             type_dict = d['schema']
+        elif 'allOf' in d and len(d['allOf']) > 0:
+            type_dict = d['allOf'][0]
         else:
             type_dict = {}
 
