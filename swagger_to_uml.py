@@ -375,8 +375,6 @@ class Swagger:
         )
 
 
-
-
 if __name__ == '__main__':
     input_file_name = sys.argv[1]
     sw = Swagger.from_file(input_file_name)
