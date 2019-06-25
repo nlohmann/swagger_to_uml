@@ -334,7 +334,7 @@ class Path:
         parameters = [Parameter.from_dict(whole, param) for param in d.get('parameters', [])]
         return Path(
             path=path_name,
-            operations=[Operation.from_dict(whole, path_name, t, op, parameters) for t, op in d.items() if t != 'parameters']
+            operations=[Operation.from_dict(whole, path_name, t, op, parameters) for t, op in d.items() if t not in ['parameters', 'summary', 'description']]
         )
 
     @property
