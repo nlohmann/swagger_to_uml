@@ -361,7 +361,7 @@ class Swagger:
     @staticmethod
     def from_file(filename):
         loader = json.load
-        if filename.endswith('.yml'):
+        if filename.endswith('.yml') or filename.endswith('.yaml'):
             loader = yaml.load
         with open(filename, 'r') as fd:
             return Swagger.from_dict(loader(fd))
