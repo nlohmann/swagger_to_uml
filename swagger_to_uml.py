@@ -26,6 +26,9 @@ from typing import List, Optional, Any, Set
 def resolve_ref(ref):
     return ref.split('/')[-1]
 
+def upcase_first_letter(s):
+    return s[0].upper() + s[1:]
+
 
 class Property:
     def __init__(self, name, type, required, example=None, description=None, default=None, enum=None, format=None,
@@ -84,6 +87,13 @@ class Property:
         # type is given or must be resolved from $ref
         if 'type' in type_dict:
             type_str = type_dict['type']
+
+            if type_str == "string" and 'format' in type_dict and type_dict['format'].endswith("ResourceId"):
+                ref_type = upcase_first_letter(type_dict['format'][0 : -10])
+
+            if type_str == "array" and 'items' in type_dict and 'type' in type_dict['items'] and "string" == type_dict['items']['type'] and 'format' in type_dict['items'] and type_dict['items']['format'].endswith("ResourceId"):
+                ref_type = upcase_first_letter(type_dict['items']['format'][0 : -10])
+
         elif '$ref' in type_dict:
             type_str = resolve_ref(type_dict['$ref'])
             ref_type = type_str
