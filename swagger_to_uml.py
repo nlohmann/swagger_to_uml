@@ -210,13 +210,20 @@ class Definition:
 
         # required properties first
         for property in sorted(self.properties, key=lambda x: x.required, reverse=True):
-            result += '    {property_str}\n'.format(property_str=property.uml)
+            if not property.ref_type:
+                result += '    {property_str}\n'.format(property_str=property.uml)
 
         result += '}\n\n'
 
         # add relationships
-        for relationship in sorted(self.relationships):
-            result += '{name} ..> {relationship}\n'.format(name=self.name, relationship=relationship)
+        for property in sorted(self.properties, key=lambda x: x.required, reverse=True):
+            if property.ref_type:
+                relationship = property.ref_type
+                property_name = property.name
+                if property.unique_items:
+                    result += '{name} --> "*" {relationship} : {property_name}\n'.format(name=self.name,relationship=relationship,property_name=property_name)
+                else:
+                    result += '{name} --> {relationship} : {property_name}\n'.format(name=self.name,relationship=relationship,property_name=property_name)
 
         return result
 
