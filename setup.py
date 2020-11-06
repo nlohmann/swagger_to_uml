@@ -1,0 +1,24 @@
+from setuptools import setup, find_packages
+
+requires = [
+    'PyYAML==5.1'
+]
+
+setup(
+    name='swagger_to_uml',
+    version='0.1',
+    description='swagger_to_uml',
+    classifiers=[
+        "Programming Language :: Python"
+    ],
+    author='',
+    author_email='',
+    url='',
+    keywords='swagger uml',
+    packages=find_packages(),
+    include_package_data=True,
+    zip_safe=False,
+    install_requires=requires,
+    tests_require=requires,
+    scripts=['bin/swagger_to_uml']
+)
