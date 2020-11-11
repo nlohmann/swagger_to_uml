@@ -11,10 +11,11 @@ setup(
     classifiers=[
         "Programming Language :: Python"
     ],
-    author='',
+    author='Niels Lohmann',
     author_email='',
-    url='',
-    keywords='swagger uml',
+    license='MIT',
+    url='http://nlohmann.me',
+    keywords='swagger uml plantuml',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
