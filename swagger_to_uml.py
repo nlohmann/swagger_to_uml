@@ -35,7 +35,8 @@ class Property:
         # type
         self.type = type  # type: str
         self.format = format  # type: Optional[str]
-        self.ref_type = ref_type  # type: Optional[str]
+        self.ref_type = ref_type  # type: Optional[Any] List[str] or str
+
 
         # constraints
         self.required = required  # type: bool
@@ -63,7 +64,7 @@ class Property:
         self.max_items = max_items  # type: Optional[int]
         self.min_items = min_items  # type: int
         self.unique_items = unique_items  # type: bool
-        self.items = items  # type: Optional[str]
+        self.items = items  # type: Optional[List[str]]
 
     @staticmethod
     def from_dict(property_name, d, required):
@@ -98,11 +99,20 @@ class Property:
         if 'items' in type_dict:
             if 'type' in type_dict['items']:
                 items = type_dict['items']['type']
+            
+            elif 'allOf' in type_dict['items']:
+                items = []
+                for ref in type_dict['items']['allOf']:
+                   items.append(resolve_ref(ref.get('$ref')))
+                ref_type = items
             else:
                 items = resolve_ref(type_dict['items']['$ref'])
                 ref_type = items
         else:
             items = None
+            
+
+
 
         return Property(
             name=property_name,
@@ -145,7 +155,7 @@ class Property:
             if lower or upper:
                 bounds = '{lower}:{upper}'.format(lower=lower, upper=upper)
 
-            type_str = '{items}[{bounds}]'.format(items=self.items, bounds=bounds)
+            type_str = '{items}[{bounds}]'.format(items=self.ref_type, bounds=bounds)
         else:
             type_str = self.type
 
@@ -180,11 +190,12 @@ class Property:
 
 
 class Definition:
-    def __init__(self, name, type, properties, relationships):
+    def __init__(self, name, type, properties, relationships,allOf):
         self.name = name  # type: str
         self.type = type  # type: str
         self.properties = properties  # type: List[Property]
         self.relationships = relationships  # type: Set[str]
+        self.allOf = allOf
 
     @staticmethod
     def from_dict(name, d):
@@ -199,10 +210,26 @@ class Definition:
         if not 'type' in d:
             print('required key "type" not found in dictionary ' + json.dumps(d), file=sys.stderr)
 
+        allOf = []
+        if 'allOf' in d:
+            for ref in d.get('allOf', []):
+              allOf.append(resolve_ref(ref.get('$ref')))  
+
+
+        relationships=[]
+        for property in properties  :
+           if property.ref_type:
+                if type(property.ref_type) is list: 
+                    for ref in property.ref_type:
+                        relationships.append(ref)
+                else:
+                    relationships.append(property.ref_type) 
+
         return Definition(name=name,
                           type=d['type'],
                           properties=properties,
-                          relationships={property.ref_type for property in properties if property.ref_type})
+                          relationships=relationships,
+                          allOf=allOf)
 
     @property
     def uml(self):
@@ -217,6 +244,9 @@ class Definition:
         # add relationships
         for relationship in sorted(self.relationships):
             result += '{name} ..> {relationship}\n'.format(name=self.name, relationship=relationship)
+
+        for ref in sorted(self.allOf):
+            result += '{ref} <|-- {name}\n'.format(ref=ref,name=self.name)        
 
         return result
 
@@ -351,9 +381,30 @@ class Swagger:
         self.definitions = definitions  # type: List[Definition]
         self.paths = paths  # type: List[Path]
 
+
     @staticmethod
     def from_dict(d):
         definitions = [Definition.from_dict(name, definition) for name, definition in d.get('definitions',{}).items()]
+        
+        # extract all class extensions
+        extensions={}
+        for definition in definitions:
+            if definition.allOf:
+                for ref in definition.allOf:
+                    extensions[definition.name] = ref
+        
+
+        # reduce ref_type if multiple
+        for definition in definitions:
+            for property in definition.properties:
+                if isinstance(property.ref_type,list):
+                    ref_type={}
+                    for ref in property.ref_type:
+                       ref_type[extensions[ref]] = True
+                    property.ref_type = list(ref_type.keys())
+                    if len(property.ref_type) == 1:
+                        property.ref_type = property.ref_type[0]
+
         paths = [Path.from_dict(d, path_name, path) for path_name, path in d['paths'].items()]
         return Swagger(definitions=definitions, paths=paths)
 
