@@ -155,7 +155,7 @@ class Property:
             if lower or upper:
                 bounds = '{lower}:{upper}'.format(lower=lower, upper=upper)
 
-            type_str = '{items}[{bounds}]'.format(items=self.items, bounds=bounds)
+            type_str = '{items}[{bounds}]'.format(items=self.ref_type, bounds=bounds)
         else:
             type_str = self.type
 
@@ -381,9 +381,30 @@ class Swagger:
         self.definitions = definitions  # type: List[Definition]
         self.paths = paths  # type: List[Path]
 
+
     @staticmethod
     def from_dict(d):
         definitions = [Definition.from_dict(name, definition) for name, definition in d.get('definitions',{}).items()]
+        
+        # extract all class extensions
+        extensions={}
+        for definition in definitions:
+            if definition.allOf:
+                for ref in definition.allOf:
+                    extensions[definition.name] = ref
+        
+
+        # reduce ref_type if multiple
+        for definition in definitions:
+            for property in definition.properties:
+                if isinstance(property.ref_type,list):
+                    ref_type={}
+                    for ref in property.ref_type:
+                       ref_type[extensions[ref]] = True
+                    property.ref_type = list(ref_type.keys())
+                    if len(property.ref_type) == 1:
+                        property.ref_type = property.ref_type[0]
+
         paths = [Path.from_dict(d, path_name, path) for path_name, path in d['paths'].items()]
         return Swagger(definitions=definitions, paths=paths)
 
