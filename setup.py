@@ -12,7 +12,7 @@ setup(
         "Programming Language :: Python"
     ],
     author='Niels Lohmann',
-    author_email='',
+    author_email='mail@nlohmann.me',
     license='MIT',
     url='http://nlohmann.me',
     keywords='swagger uml plantuml',
