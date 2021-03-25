@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 requires = [
-    'PyYAML==5.1'
+    'PyYAML==5.4'
 ]
 
 setup(
