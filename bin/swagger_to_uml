@@ -233,7 +233,10 @@ class Parameter:
     def from_dict(whole, d):
         ref = d.get('$ref')
         if ref != None:
-            d = whole['parameters'][resolve_ref(ref)]
+            d = whole
+            for k in ref.split('/'):
+                if k != '#':
+                    d = d[k]
         return Parameter(
             name=d['name'],
             location=d['in'],
