@@ -353,8 +353,13 @@ class Swagger:
 
     @staticmethod
     def from_dict(d):
+        # Support OpenAPI 2.0 definitions
         definitions = [Definition.from_dict(name, definition) for name, definition in d.get('definitions',{}).items()]
-        paths = [Path.from_dict(d, path_name, path) for path_name, path in d['paths'].items()]
+        # Support OpenAPI 3.x components.schemas
+        if 'components' in d and 'schemas' in d['components']:
+            definitions.extend([Definition.from_dict(name, definition) for name, definition in d['components']['schemas'].items()])
+        # Paths are optional (for schema-only files)
+        paths = [Path.from_dict(d, path_name, path) for path_name, path in d.get('paths', {}).items()]
         return Swagger(definitions=definitions, paths=paths)
 
     @staticmethod
@@ -362,7 +367,7 @@ class Swagger:
         loader = json.load
         if filename.endswith('.yml') or filename.endswith('.yaml'):
             import yaml
-            loader = yaml.load
+            loader = yaml.safe_load
         with open(filename, 'r') as fd:
             return Swagger.from_dict(loader(fd))
 
